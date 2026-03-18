@@ -1,14 +1,10 @@
 import type {CartLineUpdateInput} from '@shopify/hydrogen/storefront-api-types';
 import type {CartLayout, LineItemChildrenMap} from '~/components/CartMain';
-import {CartForm, Image, type OptimisticCartLine} from '@shopify/hydrogen';
+import {CartForm, Image, Money, type OptimisticCartLine} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {Link} from 'react-router';
-import {ProductPrice} from './ProductPrice';
 import {useAside} from './Aside';
-import type {
-  CartApiQueryFragment,
-  CartLineFragment,
-} from 'storefrontapi.generated';
+import type {CartApiQueryFragment} from 'storefrontapi.generated';
 
 export type CartLine = OptimisticCartLine<CartApiQueryFragment>;
 
@@ -38,18 +34,28 @@ export function CartLineItem({
     <li key={id} className="cart-line">
       <div className="cart-line-inner">
         {image && (
-          <Image
-            alt={title}
-            aspectRatio="1/1"
-            data={image}
-            height={100}
-            loading="lazy"
-            width={100}
-          />
+          <Link
+            className="cart-line-image-link"
+            prefetch="intent"
+            to={lineItemUrl}
+            onClick={() => {
+              if (layout === 'aside') close();
+            }}
+          >
+            <Image
+              alt={image.altText ?? title}
+              aspectRatio="4/5"
+              data={image}
+              height={124}
+              loading="lazy"
+              width={96}
+            />
+          </Link>
         )}
 
-        <div>
+        <div className="cart-line-content">
           <Link
+            className="cart-line-title-link"
             prefetch="intent"
             to={lineItemUrl}
             onClick={() => {
@@ -58,26 +64,32 @@ export function CartLineItem({
               }
             }}
           >
-            <p>
-              <strong>{product.title}</strong>
-            </p>
+            <strong>{product.title}</strong>
           </Link>
-          <ProductPrice price={line?.cost?.totalAmount} />
-          <ul>
+          <ul className="cart-line-options">
             {selectedOptions.map((option) => (
               <li key={option.name}>
-                <small>
+                <small className="cart-line-option-value">
                   {option.name}: {option.value}
                 </small>
               </li>
             ))}
           </ul>
-          <CartLineQuantity line={line} />
+          <div className="cart-line-footer">
+            <CartLineQuantity line={line} />
+            <p className="cart-line-price">
+              {line?.cost?.totalAmount ? (
+                <Money data={line.cost.totalAmount} />
+              ) : (
+                '-'
+              )}
+            </p>
+          </div>
         </div>
       </div>
 
       {lineItemChildren ? (
-        <div>
+        <div className="cart-line-children-wrapper">
           <p id={childrenLabelId} className="sr-only">
             Line items with {product.title}
           </p>
@@ -110,30 +122,37 @@ function CartLineQuantity({line}: {line: CartLine}) {
 
   return (
     <div className="cart-line-quantity">
-      <small>Quantity: {quantity} &nbsp;&nbsp;</small>
+      <span className="cart-line-quantity-label">Qty</span>
       <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
         <button
           aria-label="Decrease quantity"
           disabled={quantity <= 1 || !!isOptimistic}
+          type="submit"
           name="decrease-quantity"
           value={prevQuantity}
+          className="cart-line-quantity-button"
         >
-          <span>&#8722; </span>
+          <span>&#8722;</span>
         </button>
       </CartLineUpdateButton>
-      &nbsp;
+      <span className="cart-line-quantity-value">{quantity}</span>
       <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
         <button
           aria-label="Increase quantity"
           name="increase-quantity"
           value={nextQuantity}
+          type="submit"
           disabled={!!isOptimistic}
+          className="cart-line-quantity-button"
         >
           <span>&#43;</span>
         </button>
       </CartLineUpdateButton>
-      &nbsp;
-      <CartLineRemoveButton lineIds={[lineId]} disabled={!!isOptimistic} />
+      <CartLineRemoveButton
+        lineIds={[lineId]}
+        disabled={!!isOptimistic}
+        compact={quantity <= 1}
+      />
     </div>
   );
 }
@@ -146,9 +165,11 @@ function CartLineQuantity({line}: {line: CartLine}) {
 function CartLineRemoveButton({
   lineIds,
   disabled,
+  compact = false,
 }: {
   lineIds: string[];
   disabled: boolean;
+  compact?: boolean;
 }) {
   return (
     <CartForm
@@ -157,7 +178,11 @@ function CartLineRemoveButton({
       action={CartForm.ACTIONS.LinesRemove}
       inputs={{lineIds}}
     >
-      <button disabled={disabled} type="submit">
+      <button
+        className={`cart-line-remove ${compact ? 'cart-line-remove-inline' : ''}`}
+        disabled={disabled}
+        type="submit"
+      >
         Remove
       </button>
     </CartForm>

@@ -1,110 +1,114 @@
 import {useLoaderData, Link} from 'react-router';
-import type {Route} from './+types/collections._index';
-import {getPaginationVariables, Image} from '@shopify/hydrogen';
-import type {CollectionFragment} from 'storefrontapi.generated';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import type {Route} from './+types/($locale).collections._index';
+import {getPaginationVariables, Image, Pagination} from '@shopify/hydrogen';
 
-export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
+type CollectionCard = {
+  id: string;
+  title: string;
+  handle: string;
+  image?: {
+    id: string;
+    url: string;
+    altText?: string | null;
+    width?: number | null;
+    height?: number | null;
+  } | null;
+};
 
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
+type LoaderData = {
+  collections: {
+    nodes: CollectionCard[];
+    pageInfo: {
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+      startCursor?: string | null;
+      endCursor?: string | null;
+    };
+  };
+};
 
-  return {...deferredData, ...criticalData};
-}
+export const meta: Route.MetaFunction = () => {
+  return [{title: 'Celisira | Collections'}];
+};
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
-async function loadCriticalData({context, request}: Route.LoaderArgs) {
+export async function loader({context, request}: Route.LoaderArgs) {
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 4,
+    pageBy: 12,
   });
 
-  const [{collections}] = await Promise.all([
-    context.storefront.query(COLLECTIONS_QUERY, {
-      variables: paginationVariables,
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  const {collections} = await context.storefront.query(COLLECTIONS_QUERY, {
+    variables: paginationVariables,
+  });
 
   return {collections};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
-}
-
-export default function Collections() {
-  const {collections} = useLoaderData<typeof loader>();
+export default function CollectionsLanding() {
+  const {collections} = useLoaderData() as LoaderData;
 
   return (
-    <div className="collections">
-      <h1>Collections</h1>
-      <PaginatedResourceSection<CollectionFragment>
-        connection={collections}
-        resourcesClassName="collections-grid"
-      >
-        {({node: collection, index}) => (
-          <CollectionItem
-            key={collection.id}
-            collection={collection}
-            index={index}
-          />
+    <div className="collections-page">
+      <section className="collections-landing-hero">
+        <div className="collections-landing-hero-content">
+          <p className="collection-eyebrow">Celisira World</p>
+          <h1>Browse Every Collection</h1>
+          <p>
+            Discover the full edit from new arrivals to signature staples,
+            crafted for elegant everyday dressing.
+          </p>
+        </div>
+      </section>
+
+      <Pagination<CollectionCard> connection={collections}>
+        {({nodes, isLoading, PreviousLink, NextLink}) => (
+          <section className="collections-landing-content">
+            <div className="collection-pagination-row">
+              <PreviousLink className="collection-page-link">
+                {isLoading ? 'Loading...' : 'Load previous'}
+              </PreviousLink>
+              <NextLink className="collection-page-link">
+                {isLoading ? 'Loading...' : 'Load more'}
+              </NextLink>
+            </div>
+
+            <div className="collections-masonry-grid">
+              {nodes.map((collection, index) => (
+                <Link
+                  key={collection.id}
+                  className={`collections-masonry-card ${
+                    index % 5 === 0 ? 'collections-masonry-card-large' : ''
+                  }`}
+                  prefetch="intent"
+                  to={`/collections/${collection.handle}`}
+                >
+                  {collection.image ? (
+                    <Image
+                      alt={collection.image.altText || collection.title}
+                      data={collection.image}
+                      loading={index < 3 ? 'eager' : 'lazy'}
+                      sizes="(min-width: 60em) 35vw, (min-width: 45em) 50vw, 100vw"
+                    />
+                  ) : (
+                    <div className="collections-masonry-fallback" />
+                  )}
+
+                  <div className="collections-masonry-overlay" />
+                  <div className="collections-masonry-copy">
+                    <p>Curated edit</p>
+                    <h2>{collection.title}</h2>
+                    <span>Shop now</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
-      </PaginatedResourceSection>
+      </Pagination>
     </div>
   );
 }
 
-function CollectionItem({
-  collection,
-  index,
-}: {
-  collection: CollectionFragment;
-  index: number;
-}) {
-  return (
-    <Link
-      className="collection-item"
-      key={collection.id}
-      to={`/collections/${collection.handle}`}
-      prefetch="intent"
-    >
-      {collection?.image && (
-        <Image
-          alt={collection.image.altText || collection.title}
-          aspectRatio="1/1"
-          data={collection.image}
-          loading={index < 3 ? 'eager' : undefined}
-          sizes="(min-width: 45em) 400px, 100vw"
-        />
-      )}
-      <h5>{collection.title}</h5>
-    </Link>
-  );
-}
-
 const COLLECTIONS_QUERY = `#graphql
-  fragment Collection on Collection {
-    id
-    title
-    handle
-    image {
-      id
-      url
-      altText
-      width
-      height
-    }
-  }
   query StoreCollections(
     $country: CountryCode
     $endCursor: String
@@ -114,13 +118,23 @@ const COLLECTIONS_QUERY = `#graphql
     $startCursor: String
   ) @inContext(country: $country, language: $language) {
     collections(
-      first: $first,
-      last: $last,
-      before: $startCursor,
+      first: $first
+      last: $last
+      before: $startCursor
       after: $endCursor
+      sortKey: UPDATED_AT
     ) {
       nodes {
-        ...Collection
+        id
+        title
+        handle
+        image {
+          id
+          url
+          altText
+          width
+          height
+        }
       }
       pageInfo {
         hasNextPage

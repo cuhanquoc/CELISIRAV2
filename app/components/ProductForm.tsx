@@ -22,11 +22,20 @@ export function ProductForm({
       {productOptions.map((option) => {
         // If there is only a single value in the option values, don't display the option
         if (option.optionValues.length === 1) return null;
+        const isSizeOption = /size/i.test(option.name);
+        const selectedValue = option.optionValues.find((value) => value.selected);
 
         return (
           <div className="product-options" key={option.name}>
-            <h5>{option.name}</h5>
-            <div className="product-options-grid">
+            <p className="pdp-option-label">
+              {option.name} :{' '}
+              <span>{selectedValue?.name ?? selectedVariant?.title ?? '—'}</span>
+            </p>
+            <div
+              className={`product-options-grid${
+                isSizeOption ? ' product-options-grid-size' : ''
+              }`}
+            >
               {option.optionValues.map((value) => {
                 const {
                   name,
@@ -46,20 +55,20 @@ export function ProductForm({
                   // as an anchor tag
                   return (
                     <Link
-                      className="product-options-item"
+                      className={`product-options-item${
+                        selected ? ' is-selected' : ''
+                      }${!available ? ' is-unavailable' : ''}`}
                       key={option.name + name}
                       prefetch="intent"
                       preventScrollReset
                       replace
                       to={`/products/${handle}?${variantUriQuery}`}
-                      style={{
-                        border: selected
-                          ? '1px solid black'
-                          : '1px solid transparent',
-                        opacity: available ? 1 : 0.3,
-                      }}
                     >
-                      <ProductOptionSwatch swatch={swatch} name={name} />
+                      <ProductOptionSwatch
+                        swatch={swatch}
+                        name={name}
+                        useChip={isSizeOption}
+                      />
                     </Link>
                   );
                 } else {
@@ -73,14 +82,10 @@ export function ProductForm({
                       type="button"
                       className={`product-options-item${
                         exists && !selected ? ' link' : ''
+                      }${selected ? ' is-selected' : ''}${
+                        !available ? ' is-unavailable' : ''
                       }`}
                       key={option.name + name}
-                      style={{
-                        border: selected
-                          ? '1px solid black'
-                          : '1px solid transparent',
-                        opacity: available ? 1 : 0.3,
-                      }}
                       disabled={!exists}
                       onClick={() => {
                         if (!selected) {
@@ -91,17 +96,21 @@ export function ProductForm({
                         }
                       }}
                     >
-                      <ProductOptionSwatch swatch={swatch} name={name} />
+                      <ProductOptionSwatch
+                        swatch={swatch}
+                        name={name}
+                        useChip={isSizeOption}
+                      />
                     </button>
                   );
                 }
               })}
             </div>
-            <br />
           </div>
         );
       })}
       <AddToCartButton
+        className="pdp-add-to-cart"
         disabled={!selectedVariant || !selectedVariant.availableForSale}
         onClick={() => {
           open('cart');
@@ -118,7 +127,9 @@ export function ProductForm({
             : []
         }
       >
-        {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+        {selectedVariant?.availableForSale
+          ? 'Add to shopping bag'
+          : 'Sold out'}
       </AddToCartButton>
     </div>
   );
@@ -127,24 +138,38 @@ export function ProductForm({
 function ProductOptionSwatch({
   swatch,
   name,
+  useChip,
 }: {
   swatch?: Maybe<ProductOptionValueSwatch> | undefined;
   name: string;
+  useChip?: boolean;
 }) {
   const image = swatch?.image?.previewImage?.url;
   const color = swatch?.color;
 
-  if (!image && !color) return name;
+  if (useChip || (!image && !color)) {
+    return <span className="pdp-option-chip">{name}</span>;
+  }
 
   return (
-    <div
+    <span
       aria-label={name}
       className="product-option-label-swatch"
       style={{
         backgroundColor: color || 'transparent',
       }}
     >
-      {!!image && <img src={image} alt={name} />}
-    </div>
+      {!!image && (
+        <img
+          src={image}
+          alt={name}
+          loading="lazy"
+          decoding="async"
+          width={20}
+          height={20}
+        />
+      )}
+      <span className="sr-only">{name}</span>
+    </span>
   );
 }

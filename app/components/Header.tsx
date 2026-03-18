@@ -7,6 +7,7 @@ import {
 } from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
+import {resolveMenuLink} from '~/components/navigation';
 
 interface HeaderProps {
   header: HeaderQuery;
@@ -24,18 +25,24 @@ export function Header({
   publicStoreDomain,
 }: HeaderProps) {
   const {shop, menu} = header;
+
   return (
-    <header className="header">
-      <NavLink prefetch="intent" to="/" style={activeLinkStyle} end>
-        <strong>{shop.name}</strong>
-      </NavLink>
-      <HeaderMenu
-        menu={menu}
-        viewport="desktop"
-        primaryDomainUrl={header.shop.primaryDomain.url}
-        publicStoreDomain={publicStoreDomain}
-      />
-      <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+    <header className="header-shell">
+      <div className="header">
+        <NavLink prefetch="intent" to="/" className="header-brand" end>
+          <span className="header-brand-mark" aria-hidden>
+            C
+          </span>
+          <span className="header-brand-wordmark">{shop.name}</span>
+        </NavLink>
+        <HeaderMenu
+          menu={menu}
+          viewport="desktop"
+          primaryDomainUrl={header.shop.primaryDomain.url}
+          publicStoreDomain={publicStoreDomain}
+        />
+        <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+      </div>
     </header>
   );
 }
@@ -53,6 +60,27 @@ export function HeaderMenu({
 }) {
   const className = `header-menu-${viewport}`;
   const {close} = useAside();
+  const items = (menu || FALLBACK_HEADER_MENU).items
+    .map((item) => {
+      const link = resolveMenuLink({
+        title: item.title,
+        url: item.url,
+        primaryDomainUrl,
+        publicStoreDomain,
+      });
+
+      if (!link) return null;
+      return {
+        id: item.id,
+        ...link,
+      };
+    })
+    .filter(Boolean) as Array<{
+    id: string;
+    title: string;
+    to: string;
+    isExternal: boolean;
+  }>;
 
   return (
     <nav className={className} role="navigation">
@@ -61,22 +89,30 @@ export function HeaderMenu({
           end
           onClick={close}
           prefetch="intent"
-          style={activeLinkStyle}
+          className={({isActive}) =>
+            `header-menu-item ${isActive ? 'is-active' : ''}`
+          }
           to="/"
         >
           Home
         </NavLink>
       )}
-      {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
-        if (!item.url) return null;
+      {items.map((item) => {
+        if (item.isExternal) {
+          return (
+            <a
+              className="header-menu-item"
+              href={item.to}
+              key={item.id}
+              onClick={close}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              {item.title}
+            </a>
+          );
+        }
 
-        // if the url is internal, we strip the domain
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
         return (
           <NavLink
             className="header-menu-item"
@@ -84,8 +120,7 @@ export function HeaderMenu({
             key={item.id}
             onClick={close}
             prefetch="intent"
-            style={activeLinkStyle}
-            to={url}
+            to={item.to}
           >
             {item.title}
           </NavLink>
@@ -119,10 +154,12 @@ function HeaderMenuMobileToggle() {
   const {open} = useAside();
   return (
     <button
+      type="button"
       className="header-menu-mobile-toggle reset"
       onClick={() => open('mobile')}
+      aria-label="Open menu"
     >
-      <h3>☰</h3>
+      <span>Menu</span>
     </button>
   );
 }
@@ -130,7 +167,11 @@ function HeaderMenuMobileToggle() {
 function SearchToggle() {
   const {open} = useAside();
   return (
-    <button className="reset" onClick={() => open('search')}>
+    <button
+      type="button"
+      className="reset header-cta-button"
+      onClick={() => open('search')}
+    >
       Search
     </button>
   );
@@ -142,6 +183,7 @@ function CartBadge({count}: {count: number}) {
 
   return (
     <a
+      className="header-cta-cart"
       href="/cart"
       onClick={(e) => {
         e.preventDefault();
@@ -150,7 +192,7 @@ function CartBadge({count}: {count: number}) {
           cart,
           prevCart,
           shop,
-          url: window.location.href || '',
+          url: e.currentTarget.href,
         } as CartViewPayload);
       }}
     >
@@ -184,7 +226,7 @@ const FALLBACK_HEADER_MENU = {
       tags: [],
       title: 'Collections',
       type: 'HTTP',
-      url: '/collections',
+      url: '/collections/all',
       items: [],
     },
     {
@@ -193,7 +235,7 @@ const FALLBACK_HEADER_MENU = {
       tags: [],
       title: 'Blog',
       type: 'HTTP',
-      url: '/blogs/journal',
+      url: '/blogs',
       items: [],
     },
     {
@@ -203,15 +245,6 @@ const FALLBACK_HEADER_MENU = {
       title: 'Policies',
       type: 'HTTP',
       url: '/policies',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461609599032',
-      resourceId: 'gid://shopify/Page/92591030328',
-      tags: [],
-      title: 'About',
-      type: 'PAGE',
-      url: '/pages/about',
       items: [],
     },
   ],
@@ -225,7 +258,7 @@ function activeLinkStyle({
   isPending: boolean;
 }) {
   return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'black',
+    color: isPending ? 'var(--shell-text-muted)' : undefined,
+    textDecoration: isActive ? 'underline' : undefined,
   };
 }

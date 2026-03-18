@@ -4,7 +4,7 @@ import {
   useNavigation,
   useSearchParams,
 } from 'react-router';
-import type {Route} from './+types/account.orders._index';
+import type {Route} from './+types/($locale).account.orders._index';
 import {useRef} from 'react';
 import {
   Money,
@@ -63,10 +63,14 @@ export default function Orders() {
   const {orders} = customer;
 
   return (
-    <div className="orders">
+    <section className="account-orders">
+      <div className="account-card-head">
+        <h2>Orders</h2>
+        <p>Track your order history and shipment status.</p>
+      </div>
       <OrderSearchForm currentFilters={filters} />
       <OrdersTable orders={orders} filters={filters} />
-    </div>
+    </section>
   );
 }
 
@@ -80,7 +84,7 @@ function OrdersTable({
   const hasFilters = !!(filters.name || filters.confirmationNumber);
 
   return (
-    <div className="acccount-orders" aria-live="polite">
+    <div className="account-orders-list" aria-live="polite">
       {orders?.nodes.length ? (
         <PaginatedResourceSection connection={orders}>
           {({node: order}) => <OrderItem key={order.id} order={order} />}
@@ -94,11 +98,10 @@ function OrdersTable({
 
 function EmptyOrders({hasFilters = false}: {hasFilters?: boolean}) {
   return (
-    <div>
+    <div className="account-empty-state">
       {hasFilters ? (
         <>
-          <p>No orders found matching your search.</p>
-          <br />
+          <p>No orders matched your filters.</p>
           <p>
             <Link to="/account/orders">Clear filters →</Link>
           </p>
@@ -106,7 +109,6 @@ function EmptyOrders({hasFilters = false}: {hasFilters?: boolean}) {
       ) : (
         <>
           <p>You haven&apos;t placed any orders yet.</p>
-          <br />
           <p>
             <Link to="/collections">Start Shopping →</Link>
           </p>
@@ -152,7 +154,7 @@ function OrderSearchForm({
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="order-search-form"
+      className="order-search-form account-card"
       aria-label="Search orders"
     >
       <fieldset className="order-search-fieldset">
@@ -201,22 +203,37 @@ function OrderSearchForm({
 
 function OrderItem({order}: {order: OrderItemFragment}) {
   const fulfillmentStatus = flattenConnection(order.fulfillments)[0]?.status;
+  const orderRouteId =
+    typeof globalThis.btoa === 'function'
+      ? globalThis.btoa(order.id)
+      : encodeURIComponent(order.id);
+
   return (
-    <>
-      <fieldset>
-        <Link to={`/account/orders/${btoa(order.id)}`}>
-          <strong>#{order.number}</strong>
-        </Link>
-        <p>{new Date(order.processedAt).toDateString()}</p>
-        {order.confirmationNumber && (
-          <p>Confirmation: {order.confirmationNumber}</p>
-        )}
-        <p>{order.financialStatus}</p>
-        {fulfillmentStatus && <p>{fulfillmentStatus}</p>}
-        <Money data={order.totalPrice} />
-        <Link to={`/account/orders/${btoa(order.id)}`}>View Order →</Link>
-      </fieldset>
-      <br />
-    </>
+    <article className="account-order-item account-card">
+      <div className="account-order-item-row">
+        <div>
+          <Link
+            to={`/account/orders/${orderRouteId}`}
+            className="account-order-item-link"
+          >
+            #{order.number}
+          </Link>
+          <p>{new Date(order.processedAt).toLocaleDateString()}</p>
+          {order.confirmationNumber && (
+            <p>Confirmation: {order.confirmationNumber}</p>
+          )}
+        </div>
+        <div className="account-order-item-meta">
+          <span className="account-status-pill">{order.financialStatus}</span>
+          {fulfillmentStatus && (
+            <span className="account-status-pill">{fulfillmentStatus}</span>
+          )}
+          <strong>
+            <Money data={order.totalPrice} />
+          </strong>
+          <Link to={`/account/orders/${orderRouteId}`}>View order →</Link>
+        </div>
+      </div>
+    </article>
   );
 }

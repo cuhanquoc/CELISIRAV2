@@ -5,7 +5,7 @@ import {
   Outlet,
   useLoaderData,
 } from 'react-router';
-import type {Route} from './+types/account';
+import type {Route} from './+types/($locale).account';
 import {CUSTOMER_DETAILS_QUERY} from '~/graphql/customer-account/CustomerDetailsQuery';
 
 export function shouldRevalidate() {
@@ -39,19 +39,21 @@ export default function AccountLayout() {
 
   const heading = customer
     ? customer.firstName
-      ? `Welcome, ${customer.firstName}`
-      : `Welcome to your account.`
-    : 'Account Details';
+      ? `Welcome back, ${customer.firstName}`
+      : `Welcome back`
+    : 'Your account';
 
   return (
-    <div className="account">
-      <h1>{heading}</h1>
-      <br />
+    <section className="account-shell">
+      <header className="account-shell-header">
+        <p className="account-shell-kicker">Customer Area</p>
+        <h1 className="account-shell-title">{heading}</h1>
+      </header>
       <AccountMenu />
-      <br />
-      <br />
-      <Outlet context={{customer}} />
-    </div>
+      <div className="account-shell-content">
+        <Outlet context={{customer}} />
+      </div>
+    </section>
   );
 }
 
@@ -70,19 +72,16 @@ function AccountMenu() {
   }
 
   return (
-    <nav role="navigation">
-      <NavLink to="/account/orders" style={isActiveStyle}>
-        Orders &nbsp;
+    <nav role="navigation" className="account-menu">
+      <NavLink to="orders" end className="account-menu-link" style={isActiveStyle}>
+        Orders
       </NavLink>
-      &nbsp;|&nbsp;
-      <NavLink to="/account/profile" style={isActiveStyle}>
-        &nbsp; Profile &nbsp;
+      <NavLink to="profile" className="account-menu-link" style={isActiveStyle}>
+        Profile
       </NavLink>
-      &nbsp;|&nbsp;
-      <NavLink to="/account/addresses" style={isActiveStyle}>
-        &nbsp; Addresses &nbsp;
+      <NavLink to="addresses" className="account-menu-link" style={isActiveStyle}>
+        Addresses
       </NavLink>
-      &nbsp;|&nbsp;
       <Logout />
     </nav>
   );
@@ -91,7 +90,9 @@ function AccountMenu() {
 function Logout() {
   return (
     <Form className="account-logout" method="POST" action="/account/logout">
-      &nbsp;<button type="submit">Sign out</button>
+      <button type="submit" className="account-menu-link account-menu-link-muted">
+        Sign out
+      </button>
     </Form>
   );
 }

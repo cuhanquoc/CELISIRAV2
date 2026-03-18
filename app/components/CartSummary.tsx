@@ -9,9 +9,25 @@ type CartSummaryProps = {
   layout: CartLayout;
 };
 
+const FREE_SHIPPING_DISPLAY_THRESHOLD = 150;
+
 export function CartSummary({cart, layout}: CartSummaryProps) {
   const className =
     layout === 'page' ? 'cart-summary-page' : 'cart-summary-aside';
+  const subtotalAmount = cart?.cost?.subtotalAmount;
+  const subtotalValue = Number(subtotalAmount?.amount ?? 0);
+  const progressPercent =
+    subtotalValue > 0
+      ? Math.min(
+          Math.round((subtotalValue / FREE_SHIPPING_DISPLAY_THRESHOLD) * 100),
+          100,
+        )
+      : 0;
+  const remainingToGoal = Math.max(
+    FREE_SHIPPING_DISPLAY_THRESHOLD - subtotalValue,
+    0,
+  );
+
   const summaryId = useId();
   const discountsHeadingId = useId();
   const discountCodeInputId = useId();
@@ -20,17 +36,60 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
 
   return (
     <div aria-labelledby={summaryId} className={className}>
-      <h4 id={summaryId}>Totals</h4>
+      <h4 id={summaryId}>Order Summary</h4>
+      <div className="cart-shipping-progress" role="status">
+        {subtotalValue >= FREE_SHIPPING_DISPLAY_THRESHOLD ? (
+          <p className="cart-shipping-progress-label">
+            You reached the complimentary shipping display goal.
+          </p>
+        ) : (
+          <p className="cart-shipping-progress-label">
+            Add{' '}
+            {subtotalAmount ? (
+              <Money
+                data={{
+                  ...subtotalAmount,
+                  amount: remainingToGoal.toFixed(2),
+                }}
+              />
+            ) : (
+              `${remainingToGoal.toFixed(2)}`
+            )}{' '}
+            more to reach the complimentary shipping display goal.
+          </p>
+        )}
+        <div className="cart-shipping-progress-track" aria-hidden>
+          <span
+            className="cart-shipping-progress-fill"
+            style={{width: `${progressPercent}%`}}
+          />
+        </div>
+      </div>
       <dl role="group" className="cart-subtotal">
-        <dt>Subtotal</dt>
-        <dd>
-          {cart?.cost?.subtotalAmount?.amount ? (
-            <Money data={cart?.cost?.subtotalAmount} />
-          ) : (
-            '-'
-          )}
-        </dd>
+        <div>
+          <dt>Subtotal</dt>
+          <dd>{subtotalAmount ? <Money data={subtotalAmount} /> : '-'}</dd>
+        </div>
+        <div>
+          <dt>Tax</dt>
+          <dd>
+            {cart?.cost?.totalTaxAmount ? (
+              <Money data={cart.cost.totalTaxAmount} />
+            ) : (
+              '-'
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>Total</dt>
+          <dd>
+            {cart?.cost?.totalAmount ? <Money data={cart.cost.totalAmount} /> : '-'}
+          </dd>
+        </div>
       </dl>
+      <p className="cart-summary-note">
+        Final shipping rates and discounts are confirmed in Shopify checkout.
+      </p>
       <CartDiscounts
         discountCodes={cart?.discountCodes}
         discountsHeadingId={discountsHeadingId}
@@ -47,14 +106,17 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
 }
 
 function CartCheckoutActions({checkoutUrl}: {checkoutUrl?: string}) {
-  if (!checkoutUrl) return null;
-
   return (
-    <div>
-      <a href={checkoutUrl} target="_self">
-        <p>Continue to Checkout &rarr;</p>
-      </a>
-      <br />
+    <div className="cart-checkout-actions">
+      {checkoutUrl ? (
+        <a className="cart-checkout-link" href={checkoutUrl} target="_self">
+          Continue to Checkout
+        </a>
+      ) : (
+        <p className="cart-checkout-unavailable">
+          Checkout is temporarily unavailable.
+        </p>
+      )}
     </div>
   );
 }
@@ -74,7 +136,7 @@ function CartDiscounts({
       ?.map(({code}) => code) || [];
 
   return (
-    <section aria-label="Discounts">
+    <section aria-label="Discounts" className="cart-code-section">
       {/* Have existing discount, display it with a remove option */}
       <dl hidden={!codes.length}>
         <div>
@@ -106,9 +168,13 @@ function CartDiscounts({
             type="text"
             name="discountCode"
             placeholder="Discount code"
+            className="cart-code-input"
           />
-          &nbsp;
-          <button type="submit" aria-label="Apply discount code">
+          <button
+            type="submit"
+            aria-label="Apply discount code"
+            className="cart-code-button"
+          >
             Apply
           </button>
         </div>
@@ -193,7 +259,7 @@ function CartGiftCard({
   };
 
   return (
-    <section aria-label="Gift cards">
+    <section aria-label="Gift cards" className="cart-code-section">
       {giftCardCodes && giftCardCodes.length > 0 && (
         <dl>
           <dt id={giftCardHeadingId}>Applied Gift Card(s)</dt>
@@ -231,12 +297,13 @@ function CartGiftCard({
             name="giftCardCode"
             placeholder="Gift card code"
             ref={giftCardCodeInput}
+            className="cart-code-input"
           />
-          &nbsp;
           <button
             type="submit"
             disabled={giftCardAddFetcher.state !== 'idle'}
             aria-label="Apply gift card code"
+            className="cart-code-button"
           >
             Apply
           </button>

@@ -1,0 +1,189 @@
+:root {
+  /* Brand colors from the Figma Make bundle */
+  --cel-color-ink-950: #080807;
+  --cel-color-ink-900: #0c0c0b;
+  --cel-color-ink-800: #23211d;
+  --cel-color-ink-700: #3c3830;
+  --cel-color-ink-500: #5c5850;
+  --cel-color-ink-400: #8c8880;
+  --cel-color-ink-300: #a0998f;
+  --cel-color-stone-50: #fcfbf8;
+  --cel-color-stone-100: #f8f6f1;
+  --cel-color-stone-200: #ece6dc;
+  --cel-color-stone-300: #e5e2d9;
+  --cel-color-gold-400: #d0b17a;
+  --cel-color-gold-500: #bf9b5e;
+  --cel-color-gold-600: #9f7f49;
+  --cel-color-white: #ffffff;
+  --cel-color-success-600: #059669;
+  --cel-color-danger-600: #d4183d;
+
+  /* Semantic tokens for shared theme usage */
+  --cel-surface-canvas-alt: var(--cel-color-stone-50);
+  --cel-surface-canvas: var(--cel-color-stone-100);
+  --cel-surface-overlay: color-mix(
+    in srgb,
+    var(--cel-color-ink-900) 12%,
+    transparent
+  );
+  --cel-surface-elevated: var(--cel-color-white);
+  --cel-surface-inverse: var(--cel-color-ink-900);
+  --cel-border-subtle: var(--cel-color-stone-300);
+  --cel-border-strong: color-mix(
+    in srgb,
+    var(--cel-color-ink-900) 20%,
+    transparent
+  );
+  --cel-text-primary: var(--cel-color-ink-900);
+  --cel-text-secondary: var(--cel-color-ink-500);
+  --cel-text-muted: var(--cel-color-ink-400);
+  --cel-text-inverse: var(--cel-color-white);
+  --cel-text-accent: var(--cel-color-gold-500);
+  --cel-focus-ring: color-mix(
+    in srgb,
+    var(--cel-color-gold-500) 45%,
+    transparent
+  );
+
+  /* Typography tokens */
+  --cel-font-sans: 'DM Sans', 'Avenir Next', 'Segoe UI', sans-serif;
+  --cel-font-serif: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --cel-font-size-root: 16px;
+  --cel-leading-tight: 1.1;
+  --cel-leading-default: 1.5;
+  --cel-leading-relaxed: 1.7;
+  --cel-letter-tight: -0.02em;
+  --cel-letter-wide: 0.08em;
+
+  /* Spacing / radius / depth */
+  --cel-space-2xs: 0.25rem;
+  --cel-space-xs: 0.5rem;
+  --cel-space-sm: 0.75rem;
+  --cel-space-md: 1rem;
+  --cel-space-lg: 1.5rem;
+  --cel-space-xl: 2rem;
+  --cel-space-2xl: 3rem;
+  --cel-space-3xl: 4rem;
+  --cel-radius-sm: 0.25rem;
+  --cel-radius-md: 0.5rem;
+  --cel-radius-lg: 0.875rem;
+  --cel-radius-xl: 1.25rem;
+  --cel-radius-full: 9999px;
+  --cel-shadow-none: 0 0 #0000;
+  --cel-shadow-soft: 0 10px 30px rgba(12, 12, 11, 0.08);
+  --cel-shadow-strong: 0 24px 64px rgba(12, 12, 11, 0.16);
+
+  /* Motion tokens */
+  --cel-motion-duration-fast: 160ms;
+  --cel-motion-duration-base: 260ms;
+  --cel-motion-duration-slow: 420ms;
+  --cel-motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --cel-motion-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --cel-motion-ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --cel-motion-ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Shared asset mapping */
+  --cel-logo-mark-url: url('/assets/celisira-logo-mark.png');
+}
+
+html {
+  color-scheme: light;
+  font-size: var(--cel-font-size-root);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--cel-surface-canvas);
+  color-scheme: light;
+  color: var(--cel-text-primary);
+  min-height: 100%;
+  font-family: var(--cel-font-sans);
+  margin: 0;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--cel-text-primary);
+  font-family: var(--cel-font-serif);
+  letter-spacing: var(--cel-letter-tight);
+  line-height: var(--cel-leading-tight);
+  text-wrap: balance;
+}
+
+p,
+li,
+label,
+button,
+input,
+textarea,
+select {
+  font-family: var(--cel-font-sans);
+  line-height: var(--cel-leading-default);
+}
+
+a {
+  color: inherit;
+  transition:
+    color var(--cel-motion-duration-base) var(--cel-motion-ease-standard),
+    opacity var(--cel-motion-duration-base) var(--cel-motion-ease-standard);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cel-focus-ring);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--cel-color-gold-500) 22%, transparent);
+  color: var(--cel-text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+.cel-surface-card {
+  background: var(--cel-surface-elevated);
+  border: 1px solid var(--cel-border-subtle);
+  border-radius: var(--cel-radius-lg);
+  box-shadow: var(--cel-shadow-soft);
+}
+
+.cel-eyebrow {
+  color: var(--cel-text-accent);
+  font-family: var(--cel-font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.cel-logo-mark {
+  aspect-ratio: 1;
+  background-image: var(--cel-logo-mark-url);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  display: inline-block;
+  height: 2rem;
+  width: 2rem;
+}

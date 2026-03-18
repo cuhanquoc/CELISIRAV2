@@ -23,8 +23,8 @@ function getLineItemChildrenMap(lines: CartLine[]): LineItemChildrenMap {
       children[parentId].push(line);
     }
     if ('lineComponents' in line) {
-      const children = getLineItemChildrenMap(line.lineComponents);
-      for (const [parentId, childIds] of Object.entries(children)) {
+      const componentChildren = getLineItemChildrenMap(line.lineComponents);
+      for (const [parentId, childIds] of Object.entries(componentChildren)) {
         if (!children[parentId]) children[parentId] = [];
         children[parentId].push(...childIds);
       }
@@ -42,10 +42,7 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
   const cart = useOptimisticCart(originalCart);
 
   const linesCount = Boolean(cart?.lines?.nodes?.length || 0);
-  const withDiscount =
-    cart &&
-    Boolean(cart?.discountCodes?.filter((code) => code.applicable)?.length);
-  const className = `cart-main ${withDiscount ? 'with-discount' : ''}`;
+  const className = `cart-main cart-main-${layout}`;
   const cartHasItems = cart?.totalQuantity ? cart.totalQuantity > 0 : false;
   const childrenMap = getLineItemChildrenMap(cart?.lines?.nodes ?? []);
 
@@ -54,55 +51,73 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
       className={className}
       aria-label={layout === 'page' ? 'Cart page' : 'Cart drawer'}
     >
-      <CartEmpty hidden={linesCount} layout={layout} />
-      <div className="cart-details">
-        <p id="cart-lines" className="sr-only">
-          Line items
+      <header className="cart-main-header">
+        <h2>{layout === 'page' ? 'Your Bag' : 'Bag Summary'}</h2>
+        <p>
+          {cart?.totalQuantity ?? 0}{' '}
+          {(cart?.totalQuantity ?? 0) === 1 ? 'item' : 'items'}
         </p>
-        <div>
-          <ul aria-labelledby="cart-lines">
-            {(cart?.lines?.nodes ?? []).map((line) => {
-              // we do not render non-parent lines at the root of the cart
-              if (
-                'parentRelationship' in line &&
-                line.parentRelationship?.parent
-              ) {
-                return null;
-              }
-              return (
-                <CartLineItem
-                  key={line.id}
-                  line={line}
-                  layout={layout}
-                  childrenMap={childrenMap}
-                />
-              );
-            })}
-          </ul>
+      </header>
+
+      <CartEmpty hidden={linesCount} />
+
+      {cartHasItems && (
+        <div className="cart-details">
+          <p id="cart-lines" className="sr-only">
+            Line items
+          </p>
+          <div className="cart-lines-panel">
+            <ul aria-labelledby="cart-lines" className="cart-lines-list">
+              {(cart?.lines?.nodes ?? []).map((line) => {
+                // we do not render non-parent lines at the root of the cart
+                if (
+                  'parentRelationship' in line &&
+                  line.parentRelationship?.parent
+                ) {
+                  return null;
+                }
+                return (
+                  <CartLineItem
+                    key={line.id}
+                    line={line}
+                    layout={layout}
+                    childrenMap={childrenMap}
+                  />
+                );
+              })}
+            </ul>
+          </div>
+          <CartSummary cart={cart} layout={layout} />
         </div>
-        {cartHasItems && <CartSummary cart={cart} layout={layout} />}
-      </div>
+      )}
+      {layout === 'page' && cartHasItems && (
+        <p className="cart-safe-note">
+          Discounts, shipping rates, and taxes are finalized at Shopify
+          checkout.
+        </p>
+      )}
+      {layout === 'aside' && cartHasItems && (
+        <Link className="cart-view-bag-link" to="/cart" prefetch="intent">
+          View full bag
+        </Link>
+      )}
+      {layout === 'aside' && !cartHasItems && (
+        <Link className="cart-view-bag-link" to="/cart" prefetch="intent">
+          Open cart page
+        </Link>
+      )}
     </section>
   );
 }
 
-function CartEmpty({
-  hidden = false,
-}: {
-  hidden: boolean;
-  layout?: CartMainProps['layout'];
-}) {
+function CartEmpty({hidden = false}: {hidden: boolean}) {
   const {close} = useAside();
   return (
-    <div hidden={hidden}>
-      <br />
-      <p>
-        Looks like you haven&rsquo;t added anything yet, let&rsquo;s get you
-        started!
-      </p>
-      <br />
+    <div hidden={hidden} className="cart-empty-state">
+      <h3>Your bag is empty</h3>
+      <p>Add something you love and come back here to check out.</p>
       <Link to="/collections" onClick={close} prefetch="viewport">
-        Continue shopping →
+        Continue shopping
       </Link>
     </div>
   );

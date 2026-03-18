@@ -4,3 +4,30 @@
  */
 
 @import 'tailwindcss';
+
+@theme inline {
+  --font-sans: var(--cel-font-sans);
+  --font-serif: var(--cel-font-serif);
+
+  --color-cel-canvas: var(--cel-surface-canvas);
+  --color-cel-surface: var(--cel-surface-elevated);
+  --color-cel-ink: var(--cel-text-primary);
+  --color-cel-muted: var(--cel-text-muted);
+  --color-cel-accent: var(--cel-text-accent);
+  --color-cel-gold-600: var(--cel-color-gold-600);
+  --color-cel-border: var(--cel-border-subtle);
+
+  --radius-cel-sm: var(--cel-radius-sm);
+  --radius-cel-md: var(--cel-radius-md);
+  --radius-cel-lg: var(--cel-radius-lg);
+  --radius-cel-xl: var(--cel-radius-xl);
+
+  --spacing-cel-2xs: var(--cel-space-2xs);
+  --spacing-cel-xs: var(--cel-space-xs);
+  --spacing-cel-sm: var(--cel-space-sm);
+  --spacing-cel-md: var(--cel-space-md);
+  --spacing-cel-lg: var(--cel-space-lg);
+  --spacing-cel-xl: var(--cel-space-xl);
+  --spacing-cel-2xl: var(--cel-space-2xl);
+  --spacing-cel-3xl: var(--cel-space-3xl);
+}

@@ -1,5 +1,10 @@
-import {Link, useLoaderData} from 'react-router';
-import type {Route} from './+types/blogs._index';
+import {
+  isRouteErrorResponse,
+  Link,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
+import type {Route} from './+types/($locale).blogs._index';
 import {getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import type {BlogsQuery} from 'storefrontapi.generated';
@@ -7,7 +12,7 @@ import type {BlogsQuery} from 'storefrontapi.generated';
 type BlogNode = BlogsQuery['blogs']['nodes'][0];
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Blogs`}];
+  return [{title: `Celisira | Journal`}];
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -52,25 +57,62 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Blogs() {
   const {blogs} = useLoaderData<typeof loader>();
+  const hasBlogs = blogs.nodes.length > 0;
 
   return (
     <div className="blogs">
-      <h1>Blogs</h1>
-      <div className="blogs-grid">
-        <PaginatedResourceSection<BlogNode> connection={blogs}>
-          {({node: blog}) => (
-            <Link
-              className="blog"
-              key={blog.handle}
-              prefetch="intent"
-              to={`/blogs/${blog.handle}`}
-            >
-              <h2>{blog.title}</h2>
-            </Link>
-          )}
-        </PaginatedResourceSection>
-      </div>
+      <header>
+        <p>CELISIRA JOURNAL</p>
+        <h1>Stories, Care Rituals, and Brand Notes</h1>
+      </header>
+      {hasBlogs ? (
+        <div className="blogs-grid">
+          <PaginatedResourceSection<BlogNode> connection={blogs}>
+            {({node: blog}) => (
+              <Link
+                className="blog"
+                key={blog.handle}
+                prefetch="intent"
+                to={`/blogs/${blog.handle}`}
+              >
+                <h2>{blog.title}</h2>
+                <p>{blog.seo?.description || 'Read the latest from Celisira.'}</p>
+              </Link>
+            )}
+          </PaginatedResourceSection>
+        </div>
+      ) : (
+        <section aria-live="polite">
+          <p>
+            The journal is being curated. In the meantime, browse collections
+            and brand pages.
+          </p>
+          <p>
+            <Link to="/collections">Collections</Link> ·{' '}
+            <Link to="/pages/about">About Celisira</Link> ·{' '}
+            <Link to="/policies">Policies</Link>
+          </p>
+        </section>
+      )}
     </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const message = isRouteErrorResponse(error)
+    ? `Journal is temporarily unavailable (${error.status}).`
+    : 'Journal is temporarily unavailable.';
+
+  return (
+    <section className="blogs" aria-live="polite">
+      <h1>Celisira Journal</h1>
+      <p>{message}</p>
+      <p>
+        <Link to="/search">Search storefront</Link> ·{' '}
+        <Link to="/collections">Shop collections</Link>
+      </p>
+    </section>
   );
 }
 

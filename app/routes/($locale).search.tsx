@@ -1,5 +1,5 @@
-import {useLoaderData} from 'react-router';
-import type {Route} from './+types/search';
+import {Link, useLoaderData, useNavigation} from 'react-router';
+import type {Route} from './+types/($locale).search';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
@@ -7,6 +7,7 @@ import {
   type RegularSearchReturn,
   type PredictiveSearchReturn,
   getEmptyPredictiveSearchResult,
+  urlWithTrackingParams,
 } from '~/lib/search';
 import type {
   RegularSearchQuery,
@@ -14,7 +15,7 @@ import type {
 } from 'storefrontapi.generated';
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Search`}];
+  return [{title: `Celisira | Search`}];
 };
 
 export async function loader({request, context}: Route.LoaderArgs) {
@@ -37,43 +38,86 @@ export async function loader({request, context}: Route.LoaderArgs) {
  * Renders the /search route
  */
 export default function SearchPage() {
+  const navigation = useNavigation();
   const {type, term, result, error} = useLoaderData<typeof loader>();
   if (type === 'predictive') return null;
 
+  const normalizedTerm = term.trim();
+  const isSearching =
+    navigation.state !== 'idle' &&
+    navigation.location?.pathname?.endsWith('/search');
+
   return (
-    <div className="search">
-      <h1>Search</h1>
+    <section className="search">
+      <header>
+        <p>CELISIRA DISCOVERY</p>
+        <h1>Find Pieces, Stories, and Details</h1>
+        <p>
+          Search across products, editorial notes, and brand pages to continue
+          your Celisira journey.
+        </p>
+      </header>
       <SearchForm>
         {({inputRef}) => (
           <>
             <input
               defaultValue={term}
+              aria-label="Search the Celisira storefront"
               name="q"
-              placeholder="Search…"
+              placeholder="Try silk set, ritual, or shipping"
               ref={inputRef}
               type="search"
             />
             &nbsp;
-            <button type="submit">Search</button>
+            <button type="submit">{isSearching ? 'Searching...' : 'Search'}</button>
           </>
         )}
       </SearchForm>
-      {error && <p style={{color: 'red'}}>{error}</p>}
-      {!term || !result?.total ? (
-        <SearchResults.Empty />
+
+      {error ? (
+        <section aria-live="polite">
+          <p>We could not load search right now. Please try again shortly.</p>
+          <p>
+            <Link to="/collections">Browse collections</Link> ·{' '}
+            <Link to="/blogs">Read the journal</Link> ·{' '}
+            <Link to="/policies">View policies</Link>
+          </p>
+        </section>
+      ) : !normalizedTerm ? (
+        <section aria-live="polite">
+          <p>Start with a keyword to see curated product, page, and journal matches.</p>
+          <p>
+            Popular routes:{' '}
+            <Link to="/collections">Collections</Link> ·{' '}
+            <Link to="/pages/about">About Celisira</Link> ·{' '}
+            <Link to="/blogs">Journal</Link>
+          </p>
+        </section>
+      ) : !result?.total ? (
+        <section aria-live="polite">
+          <SearchResults.Empty />
+          <p>
+            No matches for <strong>{normalizedTerm}</strong>. Try broader terms
+            like <em>set</em>, <em>care</em>, or <em>gift</em>.
+          </p>
+          <p>
+            <Link to="/collections">See all collections</Link> ·{' '}
+            <Link to="/blogs">Explore the journal</Link>
+          </p>
+        </section>
       ) : (
         <SearchResults result={result} term={term}>
           {({articles, pages, products, term}) => (
             <div>
               <SearchResults.Products products={products} term={term} />
               <SearchResults.Pages pages={pages} term={term} />
-              <SearchResults.Articles articles={articles} term={term} />
+              <SearchArticles articles={articles} term={term} />
             </div>
           )}
         </SearchResults>
       )}
       <Analytics.SearchView data={{searchTerm: term, searchResults: result}} />
-    </div>
+    </section>
   );
 }
 
@@ -139,6 +183,9 @@ const SEARCH_ARTICLE_FRAGMENT = `#graphql
     id
     title
     trackingParameters
+    blog {
+      handle
+    }
   }
 ` as const;
 
@@ -209,6 +256,62 @@ export const SEARCH_QUERY = `#graphql
   ${SEARCH_ARTICLE_FRAGMENT}
   ${PAGE_INFO_FRAGMENT}
 ` as const;
+
+function SearchArticles({
+  articles,
+  term,
+}: {
+  articles: RegularSearchReturn['result']['items']['articles'];
+  term: string;
+}) {
+  if (!articles?.nodes.length) return null;
+
+  return (
+    <div className="search-result">
+      <h2>Articles</h2>
+      <div>
+        {articles.nodes.map((article) => {
+          const blogHandle = resolveArticleBlogHandle(article);
+          const articleUrl = urlWithTrackingParams({
+            baseUrl: blogHandle
+              ? `/blogs/${blogHandle}/${article.handle}`
+              : '/blogs',
+            trackingParams: article.trackingParameters,
+            term,
+          });
+
+          return (
+            <div className="search-results-item" key={article.id}>
+              <Link prefetch="intent" to={articleUrl}>
+                {article.title}
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+      <br />
+    </div>
+  );
+}
+
+type SearchArticleNode = NonNullable<
+  RegularSearchReturn['result']['items']['articles']
+>['nodes'][number];
+
+function resolveArticleBlogHandle(article: SearchArticleNode) {
+  if (
+    'blog' in article &&
+    article.blog &&
+    typeof article.blog === 'object' &&
+    'handle' in article.blog &&
+    typeof article.blog.handle === 'string' &&
+    article.blog.handle.length > 0
+  ) {
+    return article.blog.handle;
+  }
+
+  return null;
+}
 
 /**
  * Regular search fetcher

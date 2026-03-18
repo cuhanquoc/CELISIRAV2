@@ -3,6 +3,52 @@
 /* eslint-disable */
 import type * as CustomerAccountAPI from '@shopify/hydrogen/customer-account-api-types';
 
+export type CelisiraAccountShellCustomerFragment = Pick<
+  CustomerAccountAPI.Customer,
+  'id' | 'firstName' | 'lastName' | 'displayName'
+> & {
+  emailAddress?: CustomerAccountAPI.Maybe<
+    Pick<CustomerAccountAPI.CustomerEmailAddress, 'emailAddress'>
+  >;
+  phoneNumber?: CustomerAccountAPI.Maybe<
+    Pick<CustomerAccountAPI.CustomerPhoneNumber, 'phoneNumber'>
+  >;
+  defaultAddress?: CustomerAccountAPI.Maybe<
+    Pick<
+      CustomerAccountAPI.CustomerAddress,
+      'id' | 'formatted' | 'city' | 'territoryCode' | 'zip'
+    >
+  >;
+};
+
+export type CelisiraAccountShellQueryVariables = CustomerAccountAPI.Exact<{
+  language?: CustomerAccountAPI.InputMaybe<CustomerAccountAPI.LanguageCode>;
+}>;
+
+export type CelisiraAccountShellQuery = {
+  customer: Pick<
+    CustomerAccountAPI.Customer,
+    'id' | 'firstName' | 'lastName' | 'displayName'
+  > & {
+    orders: {
+      nodes: Array<Pick<CustomerAccountAPI.Order, 'id'>>;
+      pageInfo: Pick<CustomerAccountAPI.PageInfo, 'hasNextPage'>;
+    };
+    emailAddress?: CustomerAccountAPI.Maybe<
+      Pick<CustomerAccountAPI.CustomerEmailAddress, 'emailAddress'>
+    >;
+    phoneNumber?: CustomerAccountAPI.Maybe<
+      Pick<CustomerAccountAPI.CustomerPhoneNumber, 'phoneNumber'>
+    >;
+    defaultAddress?: CustomerAccountAPI.Maybe<
+      Pick<
+        CustomerAccountAPI.CustomerAddress,
+        'id' | 'formatted' | 'city' | 'territoryCode' | 'zip'
+      >
+    >;
+  };
+};
+
 export type CustomerAddressUpdateMutationVariables = CustomerAccountAPI.Exact<{
   address: CustomerAccountAPI.CustomerAddressInput;
   addressId: CustomerAccountAPI.Scalars['ID']['input'];
@@ -504,6 +550,10 @@ export type CustomerUpdateMutation = {
 };
 
 interface GeneratedQueryTypes {
+  '#graphql\n  #graphql\n  fragment CelisiraAccountShellCustomer on Customer {\n    id\n    firstName\n    lastName\n    displayName\n    emailAddress {\n      emailAddress\n    }\n    phoneNumber {\n      phoneNumber\n    }\n    defaultAddress {\n      id\n      formatted\n      city\n      territoryCode\n      zip\n    }\n  }\n\n  query CelisiraAccountShell($language: LanguageCode)\n    @inContext(language: $language) {\n    customer {\n      ...CelisiraAccountShellCustomer\n      orders(first: 1, sortKey: PROCESSED_AT, reverse: true) {\n        nodes {\n          id\n        }\n        pageInfo {\n          hasNextPage\n        }\n      }\n    }\n  }\n': {
+    return: CelisiraAccountShellQuery;
+    variables: CelisiraAccountShellQueryVariables;
+  };
   '#graphql\n  query CustomerDetails($language: LanguageCode) @inContext(language: $language) {\n    customer {\n      ...Customer\n    }\n  }\n  #graphql\n  fragment Customer on Customer {\n    id\n    firstName\n    lastName\n    defaultAddress {\n      ...Address\n    }\n    addresses(first: 6) {\n      nodes {\n        ...Address\n      }\n    }\n  }\n  fragment Address on CustomerAddress {\n    id\n    formatted\n    firstName\n    lastName\n    company\n    address1\n    address2\n    territoryCode\n    zoneCode\n    city\n    zip\n    phoneNumber\n  }\n\n': {
     return: CustomerDetailsQuery;
     variables: CustomerDetailsQueryVariables;

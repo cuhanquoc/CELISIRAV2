@@ -1,10 +1,15 @@
-import {useLoaderData} from 'react-router';
-import type {Route} from './+types/blogs.$blogHandle.$articleHandle';
+import {
+  isRouteErrorResponse,
+  Link,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
+import type {Route} from './+types/($locale).blogs.$blogHandle.$articleHandle';
 import {Image} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.article.title ?? ''} article`}];
+  return [{title: `Celisira | ${data?.article.title ?? 'Journal Article'}`}];
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -68,6 +73,8 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 export default function Article() {
   const {article} = useLoaderData<typeof loader>();
   const {title, image, contentHtml, author} = article;
+  const articleBody = contentHtml || '';
+  const hasBodyContent = articleBody.replace(/<[^>]+>/g, '').trim().length > 0;
 
   const publishedDate = new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
@@ -77,6 +84,10 @@ export default function Article() {
 
   return (
     <div className="article">
+      <p>
+        <Link to={`/blogs/${article.blog.handle}`}>← Back to channel</Link> ·{' '}
+        <Link to="/blogs">All journal channels</Link>
+      </p>
       <h1>
         {title}
         <div>
@@ -86,11 +97,42 @@ export default function Article() {
       </h1>
 
       {image && <Image data={image} sizes="90vw" loading="eager" />}
-      <div
-        dangerouslySetInnerHTML={{__html: contentHtml}}
-        className="article"
-      />
+      {hasBodyContent ? (
+        <div
+          dangerouslySetInnerHTML={{__html: articleBody}}
+          className="article"
+        />
+      ) : (
+        <section aria-live="polite">
+          <p>
+            This article header is published, but full editorial copy is still
+            being prepared.
+          </p>
+          <p>
+            <Link to={`/blogs/${article.blog.handle}`}>Return to channel</Link>{' '}
+            · <Link to="/search">Search storefront</Link>
+          </p>
+        </section>
+      )}
     </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const statusText = isRouteErrorResponse(error)
+    ? `This article could not be loaded (${error.status}).`
+    : 'This article could not be loaded.';
+
+  return (
+    <section className="article" aria-live="polite">
+      <h1>Article Unavailable</h1>
+      <p>{statusText}</p>
+      <p>
+        <Link to="/blogs">Browse journal</Link> ·{' '}
+        <Link to="/collections">Shop collections</Link>
+      </p>
+    </section>
   );
 }
 
@@ -109,6 +151,9 @@ const ARTICLE_QUERY = `#graphql
         title
         contentHtml
         publishedAt
+        blog {
+          handle
+        }
         author: authorV2 {
           name
         }

@@ -1,6 +1,7 @@
 import {Suspense} from 'react';
 import {Await, NavLink} from 'react-router';
 import type {FooterQuery, HeaderQuery} from 'storefrontapi.generated';
+import {resolveMenuLink} from '~/components/navigation';
 
 interface FooterProps {
   footer: Promise<FooterQuery | null>;
@@ -18,13 +19,21 @@ export function Footer({
       <Await resolve={footerPromise}>
         {(footer) => (
           <footer className="footer">
-            {footer?.menu && header.shop.primaryDomain?.url && (
+            <div className="footer-top">
+              <p>Free shipping over $50</p>
+              <p>30-day returns</p>
+              <p>Secure checkout</p>
+            </div>
+            {header.shop.primaryDomain?.url && (
               <FooterMenu
-                menu={footer.menu}
+                menu={footer?.menu ?? null}
                 primaryDomainUrl={header.shop.primaryDomain.url}
                 publicStoreDomain={publicStoreDomain}
               />
             )}
+            <div className="footer-bottom">
+              <p>© {new Date().getFullYear()} Celisira. All rights reserved.</p>
+            </div>
           </footer>
         )}
       </Await>
@@ -41,20 +50,37 @@ function FooterMenu({
   primaryDomainUrl: FooterProps['header']['shop']['primaryDomain']['url'];
   publicStoreDomain: string;
 }) {
+  const items = (menu || FALLBACK_FOOTER_MENU).items
+    .map((item) => {
+      const link = resolveMenuLink({
+        title: item.title,
+        url: item.url,
+        primaryDomainUrl,
+        publicStoreDomain,
+      });
+      if (!link) return null;
+      return {
+        id: item.id,
+        ...link,
+      };
+    })
+    .filter(Boolean) as Array<{
+    id: string;
+    title: string;
+    to: string;
+    isExternal: boolean;
+  }>;
+
   return (
     <nav className="footer-menu" role="navigation">
-      {(menu || FALLBACK_FOOTER_MENU).items.map((item) => {
-        if (!item.url) return null;
-        // if the url is internal, we strip the domain
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
-        const isExternal = !url.startsWith('/');
-        return isExternal ? (
-          <a href={url} key={item.id} rel="noopener noreferrer" target="_blank">
+      {items.map((item) =>
+        item.isExternal ? (
+          <a
+            href={item.to}
+            key={item.id}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
             {item.title}
           </a>
         ) : (
@@ -63,12 +89,12 @@ function FooterMenu({
             key={item.id}
             prefetch="intent"
             style={activeLinkStyle}
-            to={url}
+            to={item.to}
           >
             {item.title}
           </NavLink>
-        );
-      })}
+        ),
+      )}
     </nav>
   );
 }
@@ -123,7 +149,7 @@ function activeLinkStyle({
   isPending: boolean;
 }) {
   return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'white',
+    color: isPending ? 'var(--shell-text-muted)' : undefined,
+    textDecoration: isActive ? 'underline' : undefined,
   };
 }

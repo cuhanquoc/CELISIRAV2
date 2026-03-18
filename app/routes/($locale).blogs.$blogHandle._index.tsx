@@ -1,12 +1,17 @@
-import {Link, useLoaderData} from 'react-router';
-import type {Route} from './+types/blogs.$blogHandle._index';
+import {
+  isRouteErrorResponse,
+  Link,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
+import type {Route} from './+types/($locale).blogs.$blogHandle._index';
 import {Image, getPaginationVariables} from '@shopify/hydrogen';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.blog.title ?? ''} blog`}];
+  return [{title: `Celisira | ${data?.blog.title ?? 'Journal'}`}];
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -63,21 +68,37 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 export default function Blog() {
   const {blog} = useLoaderData<typeof loader>();
   const {articles} = blog;
+  const hasArticles = articles.nodes.length > 0;
 
   return (
     <div className="blog">
+      <p>
+        <Link to="/blogs">← All journal channels</Link>
+      </p>
       <h1>{blog.title}</h1>
-      <div className="blog-grid">
-        <PaginatedResourceSection<ArticleItemFragment> connection={articles}>
-          {({node: article, index}) => (
-            <ArticleItem
-              article={article}
-              key={article.id}
-              loading={index < 2 ? 'eager' : 'lazy'}
-            />
-          )}
-        </PaginatedResourceSection>
-      </div>
+      {hasArticles ? (
+        <div className="blog-grid">
+          <PaginatedResourceSection<ArticleItemFragment> connection={articles}>
+            {({node: article, index}) => (
+              <ArticleItem
+                article={article}
+                key={article.id}
+                loading={index < 2 ? 'eager' : 'lazy'}
+              />
+            )}
+          </PaginatedResourceSection>
+        </div>
+      ) : (
+        <section aria-live="polite">
+          <p>
+            This journal channel exists but has no published entries yet.
+          </p>
+          <p>
+            <Link to="/blogs">Browse other channels</Link> ·{' '}
+            <Link to="/collections">Shop collections</Link>
+          </p>
+        </section>
+      )}
     </div>
   );
 }
@@ -112,6 +133,24 @@ function ArticleItem({
         <small>{publishedAt}</small>
       </Link>
     </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const statusText = isRouteErrorResponse(error)
+    ? `We could not open this journal destination (${error.status}).`
+    : 'We could not open this journal destination.';
+
+  return (
+    <section className="blog" aria-live="polite">
+      <h1>Journal Destination Unavailable</h1>
+      <p>{statusText}</p>
+      <p>
+        <Link to="/blogs">Back to journal</Link> ·{' '}
+        <Link to="/search">Search storefront</Link>
+      </p>
+    </section>
   );
 }
 

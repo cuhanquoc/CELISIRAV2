@@ -1,14 +1,31 @@
-import {Link, useLoaderData} from 'react-router';
-import type {Route} from './+types/policies.$handle';
+import {
+  isRouteErrorResponse,
+  Link,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
+import type {Route} from './+types/($locale).policies.$handle';
 import {type Shop} from '@shopify/hydrogen/storefront-api-types';
 
 type SelectedPolicies = keyof Pick<
   Shop,
-  'privacyPolicy' | 'shippingPolicy' | 'termsOfService' | 'refundPolicy'
+  | 'privacyPolicy'
+  | 'shippingPolicy'
+  | 'termsOfService'
+  | 'refundPolicy'
+  | 'subscriptionPolicy'
 >;
 
+const POLICY_HANDLE_MAP: Record<string, SelectedPolicies> = {
+  'privacy-policy': 'privacyPolicy',
+  'shipping-policy': 'shippingPolicy',
+  'terms-of-service': 'termsOfService',
+  'refund-policy': 'refundPolicy',
+  'subscription-policy': 'subscriptionPolicy',
+};
+
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.policy.title ?? ''}`}];
+  return [{title: `Celisira | ${data?.policy.title ?? 'Policy'}`}];
 };
 
 export async function loader({params, context}: Route.LoaderArgs) {
@@ -16,10 +33,10 @@ export async function loader({params, context}: Route.LoaderArgs) {
     throw new Response('No handle was passed in', {status: 404});
   }
 
-  const policyName = params.handle.replace(
-    /-([a-z])/g,
-    (_: unknown, m1: string) => m1.toUpperCase(),
-  ) as SelectedPolicies;
+  const policyName = POLICY_HANDLE_MAP[params.handle];
+  if (!policyName) {
+    throw new Response('Unknown policy handle', {status: 404});
+  }
 
   const data = await context.storefront.query(POLICY_CONTENT_QUERY, {
     variables: {
@@ -27,6 +44,7 @@ export async function loader({params, context}: Route.LoaderArgs) {
       shippingPolicy: false,
       termsOfService: false,
       refundPolicy: false,
+      subscriptionPolicy: false,
       [policyName]: true,
       language: context.storefront.i18n?.language,
     },
@@ -43,50 +61,97 @@ export async function loader({params, context}: Route.LoaderArgs) {
 
 export default function Policy() {
   const {policy} = useLoaderData<typeof loader>();
+  const policyBody = policy.body || '';
+  const hasBodyContent = policyBody.replace(/<[^>]+>/g, '').trim().length > 0;
 
   return (
     <div className="policy">
-      <br />
-      <br />
       <div>
         <Link to="/policies">← Back to Policies</Link>
       </div>
-      <br />
       <h1>{policy.title}</h1>
-      <div dangerouslySetInnerHTML={{__html: policy.body}} />
+      {hasBodyContent ? (
+        <div dangerouslySetInnerHTML={{__html: policyBody}} />
+      ) : (
+        <section aria-live="polite">
+          <p>
+            This policy exists, but full legal copy has not been published yet.
+          </p>
+          <p>
+            <Link to="/policies">All policies</Link> ·{' '}
+            <Link to="/pages/about">About Celisira</Link> ·{' '}
+            <Link to="/search">Search storefront</Link>
+          </p>
+        </section>
+      )}
     </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const message = isRouteErrorResponse(error)
+    ? `Policy destination unavailable (${error.status}).`
+    : 'Policy destination unavailable.';
+
+  return (
+    <section className="policy" aria-live="polite">
+      <h1>Policy Destination</h1>
+      <p>{message}</p>
+      <p>
+        <Link to="/policies">Back to policies</Link> ·{' '}
+        <Link to="/pages/about">About Celisira</Link>
+      </p>
+    </section>
   );
 }
 
 // NOTE: https://shopify.dev/docs/api/storefront/latest/objects/Shop
 const POLICY_CONTENT_QUERY = `#graphql
-  fragment Policy on ShopPolicy {
-    body
-    handle
-    id
-    title
-    url
-  }
   query Policy(
     $country: CountryCode
     $language: LanguageCode
     $privacyPolicy: Boolean!
     $refundPolicy: Boolean!
     $shippingPolicy: Boolean!
+    $subscriptionPolicy: Boolean!
     $termsOfService: Boolean!
   ) @inContext(language: $language, country: $country) {
     shop {
       privacyPolicy @include(if: $privacyPolicy) {
-        ...Policy
+        body
+        handle
+        id
+        title
+        url
       }
       shippingPolicy @include(if: $shippingPolicy) {
-        ...Policy
+        body
+        handle
+        id
+        title
+        url
       }
       termsOfService @include(if: $termsOfService) {
-        ...Policy
+        body
+        handle
+        id
+        title
+        url
       }
       refundPolicy @include(if: $refundPolicy) {
-        ...Policy
+        body
+        handle
+        id
+        title
+        url
+      }
+      subscriptionPolicy @include(if: $subscriptionPolicy) {
+        body
+        handle
+        id
+        title
+        url
       }
     }
   }

@@ -1,11 +1,12 @@
 import {useLoaderData, data, type HeadersFunction} from 'react-router';
-import type {Route} from './+types/cart';
+import type {Route} from './+types/($locale).cart';
 import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
+import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {CartMain} from '~/components/CartMain';
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Cart`}];
+  return [{title: `Celisira | Cart`}];
 };
 
 export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
@@ -96,13 +97,16 @@ export async function action({request, context}: Route.ActionArgs) {
   );
 }
 
-export async function loader({context}: Route.LoaderArgs) {
+export async function loader({
+  context,
+}: Route.LoaderArgs): Promise<CartApiQueryFragment | null> {
   const {cart} = context;
-  return await cart.get();
+  const cartData = await cart.get();
+  return cartData ?? null;
 }
 
 export default function Cart() {
-  const cart = useLoaderData<typeof loader>();
+  const cart = useLoaderData<typeof loader>() ?? null;
 
   return (
     <div className="cart">

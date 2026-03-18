@@ -16,6 +16,7 @@ export function ProductImage({
         aspectRatio="1/1"
         data={image}
         key={image.id}
+        loading="eager"
         sizes="(min-width: 45em) 50vw, 100vw"
       />
     </div>

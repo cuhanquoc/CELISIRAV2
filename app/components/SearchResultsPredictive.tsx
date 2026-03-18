@@ -1,12 +1,13 @@
 import {Link, useFetcher, type Fetcher} from 'react-router';
 import {Image, Money} from '@shopify/hydrogen';
-import React, {useRef, useEffect} from 'react';
+import React, {useContext, useRef} from 'react';
 import {
   getEmptyPredictiveSearchResult,
   urlWithTrackingParams,
   type PredictiveSearchReturn,
 } from '~/lib/search';
 import {useAside} from './Aside';
+import {PredictiveSearchInputContext} from './SearchFormPredictive';
 
 type PredictiveSearchItems = PredictiveSearchReturn['result']['items'];
 
@@ -43,7 +44,10 @@ export function SearchResultsPredictive({
   children,
 }: SearchResultsPredictiveProps) {
   const aside = useAside();
-  const {term, inputRef, fetcher, total, items} = usePredictiveSearch();
+  const sharedInputRef = useContext(PredictiveSearchInputContext);
+  const {term, inputRef, fetcher, total, items} = usePredictiveSearch(
+    sharedInputRef ?? undefined,
+  );
 
   /*
    * Utility that resets the search input
@@ -281,21 +285,17 @@ function SearchResultsPredictiveEmpty({
  * const { items, total, inputRef, term, fetcher } = usePredictiveSearch();
  * '''
  **/
-function usePredictiveSearch(): UsePredictiveSearchReturn {
+function usePredictiveSearch(
+  sharedInputRef?: React.MutableRefObject<HTMLInputElement | null>,
+): UsePredictiveSearchReturn {
   const fetcher = useFetcher<PredictiveSearchReturn>({key: 'search'});
   const term = useRef<string>('');
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const fallbackInputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = sharedInputRef ?? fallbackInputRef;
 
   if (fetcher?.state === 'loading') {
     term.current = String(fetcher.formData?.get('q') || '');
   }
-
-  // capture the search input element as a ref
-  useEffect(() => {
-    if (!inputRef.current) {
-      inputRef.current = document.querySelector('input[type="search"]');
-    }
-  }, []);
 
   const {items, total} =
     fetcher?.data?.result ?? getEmptyPredictiveSearchResult();

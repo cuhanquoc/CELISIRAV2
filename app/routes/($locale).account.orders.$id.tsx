@@ -1,5 +1,5 @@
 import {redirect, useLoaderData} from 'react-router';
-import type {Route} from './+types/account.orders.$id';
+import type {Route} from './+types/($locale).account.orders.$id';
 import {Money, Image} from '@shopify/hydrogen';
 import type {
   OrderLineItemFullFragment,
@@ -17,7 +17,15 @@ export async function loader({params, context}: Route.LoaderArgs) {
     return redirect('/account/orders');
   }
 
-  const orderId = atob(params.id);
+  let orderId = params.id;
+  try {
+    orderId =
+      typeof globalThis.atob === 'function'
+        ? globalThis.atob(params.id)
+        : decodeURIComponent(params.id);
+  } catch {
+    orderId = decodeURIComponent(params.id);
+  }
   const {data, errors}: {data: OrderQuery; errors?: Array<{message: string}>} =
     await customerAccount.query(CUSTOMER_ORDER_QUERY, {
       variables: {
@@ -82,15 +90,18 @@ export default function OrderRoute() {
     fulfillmentStatus,
   } = useLoaderData<typeof loader>();
   return (
-    <div className="account-order">
-      <h2>Order {order.name}</h2>
-      <p>Placed on {new Date(order.processedAt!).toDateString()}</p>
+    <section className="account-order">
+      <div className="account-card-head">
+        <h2>Order {order.name}</h2>
+        <p>Placed on {new Date(order.processedAt!).toLocaleDateString()}</p>
+      </div>
       {order.confirmationNumber && (
-        <p>Confirmation: {order.confirmationNumber}</p>
+        <p className="account-order-confirmation">
+          Confirmation: {order.confirmationNumber}
+        </p>
       )}
-      <br />
-      <div>
-        <table>
+      <div className="account-order-grid">
+        <table className="account-order-table">
           <thead>
             <tr>
               <th scope="col">Product</th>
@@ -110,10 +121,7 @@ export default function OrderRoute() {
               discountPercentage) && (
               <tr>
                 <th scope="row" colSpan={3}>
-                  <p>Discounts</p>
-                </th>
-                <th scope="row">
-                  <p>Discounts</p>
+                  Discounts
                 </th>
                 <td>
                   {discountPercentage ? (
@@ -126,10 +134,7 @@ export default function OrderRoute() {
             )}
             <tr>
               <th scope="row" colSpan={3}>
-                <p>Subtotal</p>
-              </th>
-              <th scope="row">
-                <p>Subtotal</p>
+                Subtotal
               </th>
               <td>
                 <Money data={order.subtotal!} />
@@ -139,9 +144,6 @@ export default function OrderRoute() {
               <th scope="row" colSpan={3}>
                 Tax
               </th>
-              <th scope="row">
-                <p>Tax</p>
-              </th>
               <td>
                 <Money data={order.totalTax!} />
               </td>
@@ -150,16 +152,13 @@ export default function OrderRoute() {
               <th scope="row" colSpan={3}>
                 Total
               </th>
-              <th scope="row">
-                <p>Total</p>
-              </th>
               <td>
                 <Money data={order.totalPrice!} />
               </td>
             </tr>
           </tfoot>
         </table>
-        <div>
+        <aside className="account-card account-order-aside">
           <h3>Shipping Address</h3>
           {order?.shippingAddress ? (
             <address>
@@ -182,40 +181,55 @@ export default function OrderRoute() {
           <div>
             <p>{fulfillmentStatus}</p>
           </div>
-        </div>
+        </aside>
       </div>
-      <br />
-      <p>
+      <p className="account-order-status-link">
         <a target="_blank" href={order.statusPageUrl} rel="noreferrer">
-          View Order Status →
+          View order status →
         </a>
       </p>
-    </div>
+    </section>
   );
 }
 
 function OrderLineRow({lineItem}: {lineItem: OrderLineItemFullFragment}) {
+  const lineItemPrice = lineItem.price ?? lineItem.totalDiscount;
+  const lineTotal = Number(lineItemPrice?.amount ?? 0) * lineItem.quantity;
+
   return (
-    <tr key={lineItem.id}>
+    <tr>
       <td>
-        <div>
+        <div className="account-line-item">
           {lineItem?.image && (
-            <div>
+            <div className="account-line-item-image">
               <Image data={lineItem.image} width={96} height={96} />
             </div>
           )}
           <div>
-            <p>{lineItem.title}</p>
+            <p className="account-line-item-title">{lineItem.title}</p>
             <small>{lineItem.variantTitle}</small>
           </div>
         </div>
       </td>
       <td>
-        <Money data={lineItem.price!} />
+        {lineItemPrice ? (
+          <Money data={lineItemPrice} />
+        ) : (
+          <span aria-label="Unavailable price">-</span>
+        )}
       </td>
       <td>{lineItem.quantity}</td>
       <td>
-        <Money data={lineItem.totalDiscount!} />
+        {lineItemPrice ? (
+          <Money
+            data={{
+              amount: lineTotal.toFixed(2),
+              currencyCode: lineItemPrice.currencyCode,
+            }}
+          />
+        ) : (
+          <span aria-label="Unavailable total">-</span>
+        )}
       </td>
     </tr>
   );

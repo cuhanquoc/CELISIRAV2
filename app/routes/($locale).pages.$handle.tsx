@@ -1,9 +1,14 @@
-import {useLoaderData} from 'react-router';
-import type {Route} from './+types/pages.$handle';
+import {
+  isRouteErrorResponse,
+  Link,
+  useLoaderData,
+  useRouteError,
+} from 'react-router';
+import type {Route} from './+types/($locale).pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
+  return [{title: `Celisira | ${data?.page.title ?? 'Page'}`}];
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -56,14 +61,52 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Page() {
   const {page} = useLoaderData<typeof loader>();
+  const pageBody = page.body || '';
+  const hasBodyContent = pageBody.replace(/<[^>]+>/g, '').trim().length > 0;
 
   return (
-    <div className="page">
+    <article className="page">
       <header>
+        <p>CELISIRA</p>
         <h1>{page.title}</h1>
       </header>
-      <main dangerouslySetInnerHTML={{__html: page.body}} />
-    </div>
+      {hasBodyContent ? (
+        <main dangerouslySetInnerHTML={{__html: pageBody}} />
+      ) : (
+        <main>
+          <p>
+            This page is being refined. Explore core destinations while we
+            publish the complete editorial content.
+          </p>
+          <p>
+            <Link to="/collections">Collections</Link> ·{' '}
+            <Link to="/blogs">Journal</Link> · <Link to="/policies">Policies</Link>
+          </p>
+        </main>
+      )}
+    </article>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const title = isRouteErrorResponse(error) && error.status === 404
+    ? 'Page Not Available'
+    : 'Unable to Load This Page';
+  const description = isRouteErrorResponse(error) && error.status === 404
+    ? 'The destination exists in navigation, but the page content is not published yet.'
+    : 'There was an issue loading this destination. Please try another route.';
+
+  return (
+    <section className="page" aria-live="polite">
+      <h1>{title}</h1>
+      <p>{description}</p>
+      <p>
+        <Link to="/collections">Shop collections</Link> ·{' '}
+        <Link to="/blogs">Read the journal</Link> ·{' '}
+        <Link to="/policies">View policies</Link>
+      </p>
+    </section>
   );
 }
 

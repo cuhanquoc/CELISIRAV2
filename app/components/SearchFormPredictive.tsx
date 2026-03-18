@@ -4,7 +4,7 @@ import {
   type FormProps,
   type Fetcher,
 } from 'react-router';
-import React, {useRef, useEffect} from 'react';
+import React, {createContext, useContext, useRef, useEffect} from 'react';
 import type {PredictiveSearchReturn} from '~/lib/search';
 import {useAside} from './Aside';
 
@@ -20,6 +20,22 @@ type SearchFormPredictiveProps = Omit<FormProps, 'children'> & {
 };
 
 export const SEARCH_ENDPOINT = '/search';
+export const PredictiveSearchInputContext =
+  createContext<React.MutableRefObject<HTMLInputElement | null> | null>(null);
+
+export function PredictiveSearchInputProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  return (
+    <PredictiveSearchInputContext.Provider value={inputRef}>
+      {children}
+    </PredictiveSearchInputContext.Provider>
+  );
+}
 
 /**
  *  Search form component that sends search requests to the `/search` route
@@ -30,7 +46,9 @@ export function SearchFormPredictive({
   ...props
 }: SearchFormPredictiveProps) {
   const fetcher = useFetcher<PredictiveSearchReturn>({key: 'search'});
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const fallbackInputRef = useRef<HTMLInputElement | null>(null);
+  const sharedInputRef = useContext(PredictiveSearchInputContext);
+  const inputRef = sharedInputRef ?? fallbackInputRef;
   const navigate = useNavigate();
   const aside = useAside();
 
@@ -62,7 +80,7 @@ export function SearchFormPredictive({
   // will select the element based on the input
   useEffect(() => {
     inputRef?.current?.setAttribute('type', 'search');
-  }, []);
+  }, [inputRef]);
 
   if (typeof children !== 'function') {
     return null;
