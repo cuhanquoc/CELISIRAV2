@@ -1,0 +1,21 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="500"
+  height="80"
+  viewBox="0 0 500 80"
+  fill="none"
+>
+  <title>CELISIRA</title>
+  <text
+    x="250"
+    y="52"
+    text-anchor="middle"
+    fill="#FCFBF8"
+    font-family="'Cormorant Garamond', Georgia, serif"
+    font-size="42"
+    font-weight="600"
+    letter-spacing="0.3em"
+  >
+    CELISIRA
+  </text>
+</svg>

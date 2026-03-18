@@ -8,6 +8,7 @@ import {
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {resolveMenuLink} from '~/components/navigation';
+import brandWordmark from '~/assets/celisira-wordmark.svg';
 
 interface HeaderProps {
   header: HeaderQuery;
@@ -24,16 +25,19 @@ export function Header({
   cart,
   publicStoreDomain,
 }: HeaderProps) {
-  const {shop, menu} = header;
+  const {menu} = header;
 
   return (
     <header className="header-shell">
       <div className="header">
         <NavLink prefetch="intent" to="/" className="header-brand" end>
-          <span className="header-brand-mark" aria-hidden>
-            C
-          </span>
-          <span className="header-brand-wordmark">{shop.name}</span>
+          <img
+            alt="Celisira"
+            className="header-brand-wordmark-image"
+            height="40"
+            src={brandWordmark}
+            width="250"
+          />
         </NavLink>
         <HeaderMenu
           menu={menu}

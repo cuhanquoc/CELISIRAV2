@@ -309,33 +309,20 @@ button.reset:hover:not(:has(> *)) {
   align-items: center;
   color: var(--cel-text-inverse);
   display: inline-flex;
-  gap: var(--cel-space-sm);
+  flex: 0 0 auto;
+  min-width: 0;
   text-decoration: none;
 }
 
-.header-brand-mark {
-  align-items: center;
-  border: 1px solid color-mix(in srgb, var(--cel-color-white) 28%, transparent);
-  border-radius: 999px;
-  display: inline-flex;
-  font-family: var(--cel-font-serif);
-  font-size: 1rem;
-  height: 1.8rem;
-  justify-content: center;
-  line-height: 1;
-  width: 1.8rem;
-}
-
-.header-brand-wordmark {
-  font-family: var(--cel-font-serif);
-  font-size: 1.45rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+.header-brand-wordmark-image {
+  color: var(--cel-text-inverse);
+  display: block;
+  height: auto;
+  max-width: min(15.625rem, 42vw);
+  width: 100%;
 
   @media (max-width: 40em) {
-    font-size: 1.2rem;
-    letter-spacing: 0.14em;
+    max-width: min(11rem, 46vw);
   }
 }
 

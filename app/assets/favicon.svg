@@ -1,28 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none">
-  <style>
-    .stroke {
-      stroke: #000;
-    }
-    .fill {
-      fill: #000;
-    }
-    @media (prefers-color-scheme: dark) {
-      .stroke {
-        stroke: #fff;
-      }
-      .fill {
-        fill: #fff;
-      }
-    }
-  </style>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="64"
+  height="64"
+  viewBox="0 0 64 64"
+  fill="none"
+>
+  <rect width="64" height="64" rx="16" fill="#FCFBF8" />
   <path
-    class="stroke"
-    fill-rule="evenodd"
-    d="M16.1 16.04 1 8.02 6.16 5.3l5.82 3.09 4.88-2.57-5.82-3.1L16.21 0l15.1 8.02-5.17 2.72-5.5-2.91-4.88 2.57 5.5 2.92-5.16 2.72Z"
+    d="M45.603 19.823c-2.727-1.963-6.39-3.11-10.34-3.11-9.866 0-17.862 7.149-17.862 15.969 0 8.818 7.996 15.967 17.862 15.967 3.95 0 7.613-1.145 10.34-3.107"
+    stroke="#11100F"
+    stroke-width="4.2"
+    stroke-linecap="round"
   />
   <path
-    class="fill"
-    fill-rule="evenodd"
-    d="M16.1 32 1 23.98l5.16-2.72 5.82 3.08 4.88-2.57-5.82-3.08 5.17-2.73 15.1 8.02-5.17 2.72-5.5-2.92-4.88 2.58 5.5 2.92L16.1 32Z"
+    d="M42.316 24.447c-1.821-1.297-4.274-2.054-6.918-2.054-6.588 0-11.927 4.626-11.927 10.332s5.339 10.331 11.927 10.331c2.644 0 5.097-.756 6.918-2.053"
+    stroke="#BF9B5E"
+    stroke-width="2.6"
+    stroke-linecap="round"
+  />
+  <path
+    d="M46.743 16.799 34.754 48.65"
+    stroke="#11100F"
+    stroke-width="1.9"
+    stroke-linecap="round"
+    opacity="0.9"
   />
 </svg>

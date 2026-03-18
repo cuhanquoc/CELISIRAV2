@@ -83,7 +83,7 @@
   --cel-motion-ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Shared asset mapping */
-  --cel-logo-mark-url: url('/assets/celisira-logo-mark.png');
+  --cel-logo-mark-url: url('../assets/favicon.svg');
 }
 
 html {
